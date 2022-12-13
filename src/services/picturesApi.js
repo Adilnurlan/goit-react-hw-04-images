@@ -8,10 +8,10 @@ export const fetchImages = (page, query) => {
   return axios({
     params: {
       key: APIKEY,
+      q: query,
       image_type: 'photo',
       orientation: 'horizontal',
       safesearch: true,
-      query,
       page,
       per_page: 12,
     },
