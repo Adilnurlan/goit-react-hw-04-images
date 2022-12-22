@@ -1,94 +1,69 @@
 // import PropTypes from 'prop-types';
-import React, { Component } from 'react';
-import Searchbar from './Searchbar/Searchbar';
+import React, { useState, useEffect } from 'react';
+import { Searchbar } from './Searchbar/Searchbar';
 import { ImageGallery } from './ImageGallery/ImageGallery';
 import { fetchImages } from 'services/picturesApi';
 import { imageMapper } from './ImageMapper/imageMapper';
 import { Button } from './Button/Button';
 import { Loader } from './Loader/Loader';
-import Modal from './Modal/Modal';
+import { Modal } from './Modal/Modal';
 
-export default class App extends Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    largeImageURL: null,
-    isShown: false,
-    isLoading: false,
-    error: null,
-    loadMore: false,
-  };
+export const App = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [largeImageURL, setLargeImageURL] = useState(null);
+  const [isShown, setIsShown] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [loadMore, setLoadMore] = useState(false);
 
-  componentDidUpdate(prevProps, prevState) {
-    const { page, query } = this.state;
-    if (prevState.page !== page || prevState.query !== query) {
-      this.getImages();
-    }
-  }
-
-  getImages = () => {
-    this.setState({ isLoading: true });
-    if (this.state.query.trim() !== '') {
-      const { page, query } = this.state;
+  useEffect(() => {
+    if (page !== 1 || query !== '') {
+      if (query === '') {
+        setLoadMore(false);
+        return;
+      }
+      setIsLoading(true);
       fetchImages(page, query)
         .then(({ data: { hits } }) => {
-          hits.length >= 12
-            ? this.setState({ loadMore: true })
-            : this.setState({ loadMore: false });
+          hits.length >= 12 ? setLoadMore(true) : setLoadMore(false);
           hits.length === 0 && alert('There is no image');
-          this.setState(prevState => ({
-            images: [...prevState.images, ...imageMapper(hits)],
-          }));
+          setImages(prevImages => [...prevImages, ...imageMapper(hits)]);
         })
         .catch(error => {
-          this.setState({ error: error.message });
+          setError(error.message);
         })
-        .finally(() => this.setState({ isLoading: false }));
-    } else {
-      this.setState({ loadMore: false });
-      return;
+        .finally(() => setIsLoading(false));
     }
+  }, [page, query]);
+
+  const handleSearchbarSubmit = query => {
+    setQuery(query);
+    setImages([]);
+    setPage(1);
   };
 
-  handleSearchbarSubmit = query => {
-    this.setState({
-      query,
-      images: [],
-      page: 1,
-    });
+  const handlerLoadMore = () => {
+    setPage(prevPage => prevPage + 1);
   };
 
-  handlerLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+  const openModal = largeImageURL => {
+    setIsShown(true);
+    setLargeImageURL(largeImageURL);
   };
 
-  openModal = largeImageURL => {
-    this.setState({
-      isShown: true,
-      largeImageURL,
-    });
-  };
-  closeModal = () => {
-    this.setState({
-      isShown: false,
-    });
+  const closeModal = () => {
+    setIsShown(false);
   };
 
-  render() {
-    const { images, loadMore, isShown, isLoading, largeImageURL } = this.state;
-    return (
-      <div className="App">
-        <Searchbar onSubmit={this.handleSearchbarSubmit} />
-        <ImageGallery images={images} openModal={this.openModal} />
-        {isLoading && <Loader />}
-        {loadMore && <Button clickHandler={this.handlerLoadMore} />}
-        {isShown && (
-          <Modal largeImageURL={largeImageURL} onClose={this.closeModal} />
-        )}
-      </div>
-    );
-  }
-}
+  return (
+    <div className="App">
+      <Searchbar onSubmit={handleSearchbarSubmit} />
+      <ImageGallery images={images} openModal={openModal} />
+      {isLoading && <Loader />}
+      {loadMore && <Button clickHandler={handlerLoadMore} />}
+      {isShown && <Modal largeImageURL={largeImageURL} onClose={closeModal} />}
+    </div>
+  );
+};
