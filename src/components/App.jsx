@@ -15,7 +15,7 @@ export const App = () => {
   const [largeImageURL, setLargeImageURL] = useState(null);
   const [isShown, setIsShown] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  // const [error, setError] = useState(null);
   const [loadMore, setLoadMore] = useState(false);
 
   useEffect(() => {
@@ -31,8 +31,8 @@ export const App = () => {
           hits.length === 0 && alert('There is no image');
           setImages(prevImages => [...prevImages, ...imageMapper(hits)]);
         })
-        .catch(error => {
-          setError(error.message);
+        .catch(e => {
+          alert(e.message);
         })
         .finally(() => setIsLoading(false));
     }
